@@ -1,0 +1,14 @@
+Install
+*******
+
+1) Install Emoncms on a Raspeberry Pi (or any linux machine).
+See http://emoncms.org/site/docs/raspberrypibuild
+
+2) On the Raspberry Pi, add the required Python modules
+
+> sudo apt-get install python-pip
+> sudo apt-get install python-requests
+> sudo apt-get install python-serial
+> sudo pip install arduino-python
+
+3) Install the prototype.ino file on the Arduino with Arduino IDE

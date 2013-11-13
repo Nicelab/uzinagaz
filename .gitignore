@@ -1,0 +1,8 @@
+*.egg-info
+*.pyc
+build/
+var/
+dist/
+.tox
+/.coverage
+/.noseids

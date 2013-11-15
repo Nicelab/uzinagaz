@@ -1,18 +1,24 @@
+#!/usr/bin/env python
 # -*- coding: utf8 -*-
 
-import time
 import json
+import logging
+import time
 
 from Arduino import Arduino
+import daemon
 import requests
 
 
+logger = logging.getLogger(__name__)
+
+
 class ArduinoDHT(Arduino):
-    """ Extent the python-arduino library by addind DHT support."""
+    """ Extend the python-arduino library by addind DHT support."""
 
     #TODO: add value error handling on pin and model
     def dhtRead(self, pin=None, model=11):
-        """ Read hymidity and temperature from a DHT sensor.
+        """ Read humidity and temperature from a DHT sensor.
 
         :param pin: the pin number connected to the digital pin of the DHT sensor
         :param model: the DHT model type. Accepted values are 11, 21, 22
@@ -45,27 +51,34 @@ def emoncms(host='localhost', path='emoncms', apikey=None, json_data=None):
     #return r
 
 
-board = ArduinoDHT()
+def main():
 
-while True:
-    dht_read = board.dhtRead(2, 22)
-    print dht_read
-    time.sleep(1)
+    board = ArduinoDHT()
 
-    # convert from string to json formated datas
-    data = dht_read.split()
-    humidity = data[0]
-    temperature = data[1]
-    json_data = json.dumps({'humidity': humidity, 'temperature': temperature})
+    while True:
+        dht_read = board.dhtRead(2, 22)
+        logger.info(dht_read)
+        time.sleep(1)
 
-    #post to emoncms
-    emoncms(apikey='', json_data=json_data)
+        # convert from string to json formated datas
+        data = dht_read.split()
+        humidity = data[0]
+        temperature = data[1]
+        json_data = json.dumps({'humidity': humidity, 'temperature': temperature})
+
+        #post to emoncms
+        emoncms(apikey='', json_data=json_data)
+
+
+if __name__ == "__main__":
+    main()
 
 
 #TODO: test https errors and exception based on responses
 #TODO: maybe add timestamp
 #TODO: use emoncms node ?
-#TODO: add logging
+#TODO: add logging messages
 #TODO: use a config file
 #TODO: make it a python module
-#TODO: add cheks on results errors
+#TODO: add checks on results errors
+#TODO daemonize

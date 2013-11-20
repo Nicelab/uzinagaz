@@ -3,14 +3,17 @@
 
 import json
 import logging
+import sys
 import time
 
 from Arduino import Arduino
-import daemon
+#import daemon
 import requests
 
 
 logger = logging.getLogger(__name__)
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 class ArduinoDHT(Arduino):
@@ -46,8 +49,11 @@ def emoncms(host='localhost', path='emoncms', apikey=None, json_data=None):
     :param json_data: json datas to post
     """
     # emoncms is designed than we need an HTTP GET request to post datas
-    url = 'http://{0}/{1}/input/post.json?apikey={2}'.format(host, path, apikey)
-    r = requests.get(api_url, json)
+    url = 'http://{0}/{1}/input/post.json?apikey={2}&json={3}'.format(host, path, apikey, json_data)
+    try:
+        r = requests.get(url)
+    except requests.exceptions.ConnectionError as error:
+        logger.error(error.message)
     #return r
 
 
@@ -56,9 +62,13 @@ def main():
     board = ArduinoDHT()
 
     while True:
-        dht_read = board.dhtRead(2, 22)
-        logger.info(dht_read)
-        time.sleep(1)
+        # avoid pin 13 to read DHT on Arduino Uno
+        dht_read = board.dhtRead(12, 22)
+        if 'failnan' in dht_read:
+            logger.error('DHT read error')
+        else:
+            logger.info("DHT: "+dht_read)
+        time.sleep(2)
 
         # convert from string to json formated datas
         data = dht_read.split()
@@ -66,8 +76,22 @@ def main():
         temperature = data[1]
         json_data = json.dumps({'humidity': humidity, 'temperature': temperature})
 
-        #post to emoncms
+        # post to emoncms
         emoncms(apikey='', json_data=json_data)
+
+        # read COV from MQ-7 sensor
+        cov_read = board.analogRead(1)
+        if not cov_read:
+            logger.error('COV read error')
+        else:
+            logger.info("COV: "+str(cov_read))
+
+        # Read CO from MQ-135 sensor
+        co_read = board.analogRead(2)
+        if not co_read:
+            logger.error('CO read error')
+        else:
+            logger.info("CO: "+str(co_read))
 
 
 if __name__ == "__main__":
@@ -82,3 +106,4 @@ if __name__ == "__main__":
 #TODO: make it a python module
 #TODO: add checks on results errors
 #TODO daemonize
+#TODO solve mixing data problem

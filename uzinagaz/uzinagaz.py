@@ -57,45 +57,47 @@ def emoncms(host='localhost', path='emoncms', apikey=None, json_data=None):
     #return r
 
 
+board = ArduinoDHT()
+APIKEY = '0000'
+
 def main():
 
-    board = ArduinoDHT()
-
-    while True:
-        # avoid pin 13 to read DHT on Arduino Uno
-        dht_read = board.dhtRead(12, 22)
-        if 'failnan' in dht_read:
-            logger.error('DHT read error')
-        else:
-            logger.info("DHT: "+dht_read)
-        time.sleep(2)
-
-        # convert from string to json formated datas
+    # avoid pin 13 to read DHT on Arduino Uno
+    dht_read = board.dhtRead(12, 22)
+    if 'failnan' in dht_read:
+        logger.error('DHT read error')
+    else:
         data = dht_read.split()
-        humidity = data[0]
-        temperature = data[1]
-        json_data = json.dumps({'humidity': humidity, 'temperature': temperature})
+        try:
+            humidity = data[0]
+            temperature = data[1]
+            logger.info("H: {0}% T: {1}°C".format(humidity, temperature))
 
-        # post to emoncms
-        emoncms(apikey='', json_data=json_data)
+            # convert from string to json formated datas and post to emoncms
+            json_data = json.dumps({'humidity': humidity, 'temperature': temperature})
+#        emoncms(apikey=APIKEY, json_data=json_data)
+        except IndexError:
+            logger.error("DHT read error")
 
-        # read COV from MQ-7 sensor
-        cov_read = board.analogRead(1)
-        if not cov_read:
-            logger.error('COV read error')
-        else:
-            logger.info("COV: "+str(cov_read))
+    # read COV from MQ-7 sensor
+    cov_read = board.analogRead(1)
+    if not cov_read:
+        logger.error("COV read error")
+    else:
+        logger.info("COV: "+str(cov_read))
 
-        # Read CO from MQ-135 sensor
-        co_read = board.analogRead(2)
-        if not co_read:
-            logger.error('CO read error')
-        else:
-            logger.info("CO: "+str(co_read))
+    # Read CO from MQ-135 sensor
+    co_read = board.analogRead(2)
+    if not co_read:
+        logger.error("CO read error")
+    else:
+        logger.info("CO: "+str(co_read))
 
+    time.sleep(5)
 
 if __name__ == "__main__":
-    main()
+    while True:
+        main()
 
 
 #TODO: test https errors and exception based on responses

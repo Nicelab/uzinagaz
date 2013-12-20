@@ -85,6 +85,8 @@ def main():
         logger.error("COV read error")
     else:
         logger.info("COV: "+str(cov_read))
+        json_data = json.dumps({'cov': str(cov_read)})
+        emoncms(apikey=APIKEY, json_data=json_data)
 
     # Read CO from MQ-135 sensor
     co_read = board.analogRead(2)
@@ -92,6 +94,8 @@ def main():
         logger.error("CO read error")
     else:
         logger.info("CO: "+str(co_read))
+        json_data = json.dumps({'co': str(co_read)})
+        emoncms(apikey=APIKEY, json_data=json_data)
 
     time.sleep(5)
 
